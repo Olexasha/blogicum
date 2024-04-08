@@ -61,7 +61,10 @@ class Post(BaseModel):
         related_name="posts",
     )
     image = models.ImageField(
-        verbose_name="Фото", upload_to="blog/", null=True, blank=True,
+        verbose_name="Фото",
+        upload_to="blog/",
+        null=True,
+        blank=True,
     )
 
     def get_absolute_url(self):

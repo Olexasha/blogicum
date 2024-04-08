@@ -4,9 +4,8 @@ from .models import Comment, Post
 
 
 class PostForm(forms.ModelForm):
-    """
-    Форма для добавления поста.
-    """
+    """Форма для добавления поста."""
+
     class Meta:
         model = Post
         exclude = (
@@ -19,9 +18,7 @@ class PostForm(forms.ModelForm):
 
 
 class CommentForm(forms.ModelForm):
-    """
-    Форма для добавления комментария к посту.
-    """
+    """Форма для добавления комментария к посту."""
 
     class Meta:
         model = Comment

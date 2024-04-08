@@ -24,8 +24,8 @@ User = get_user_model()
 
 
 class PostFieldsMixin:
-    """
-    Миксин, определяющий общие поля для представлений создания и редактирования постов.
+    """Миксин, определяющий общие поля для представлений создания и
+    редактирования постов.
     """
 
     model = Post
@@ -36,29 +36,26 @@ class PostFieldsMixin:
 class PostCreateEditView(
     LoginRequiredMixin, PostFieldsMixin, CreateUpdateView
 ):
-    """
-    Представление для создания и редактирования постов.
-    """
+    """Представление для создания и редактирования постов."""
 
     form_class = PostForm
 
     def form_valid(self, form):
-        """
-        Проверяет валидность формы и устанавливает текущего
+        """Проверяет валидность формы и устанавливает текущего
         пользователя в качестве автора поста.
         """
         form.instance.author = self.request.user
         return super().form_valid(form)
 
     def get_success_url(self, *args, **kwargs):
-        """
-        Возвращает URL для перенаправления после успешного создания/редактирования поста.
+        """Возвращает URL для перенаправления после успешного
+        создания/редактирования поста.
         """
         return reverse("blog:profile", args=[self.request.user.username])
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        Перехватывает запрос и проверяет, может ли текущий пользователь редактировать пост.
+        """Перехватывает запрос и проверяет, может ли текущий
+        пользователь редактировать пост.
         """
         if "edit/" in self.request.path:
             post_to_delete = get_object_or_404(Post, id=kwargs["pk"])
@@ -68,15 +65,14 @@ class PostCreateEditView(
 
 
 class PostDeleteView(LoginRequiredMixin, PostFieldsMixin, DeleteView):
-    """
-    Представление для удаления поста.
-    """
+    """Представление для удаления поста."""
 
     pass
 
     def dispatch(self, request, *args, **kwargs):
         """
-        Перехватывает запрос и проверяет, может ли текущий пользователь удалить пост.
+        Перехватывает запрос и проверяет, может ли текущий пользователь
+        удалить пост.
         """
         post_to_delete = get_object_or_404(Post, id=kwargs["pk"])
         if request.user.id != post_to_delete.author.id:
@@ -85,9 +81,7 @@ class PostDeleteView(LoginRequiredMixin, PostFieldsMixin, DeleteView):
 
 
 class PostListView(ListView):
-    """
-    Представление списка постов.
-    """
+    """Представление списка постов."""
 
     model = Post
     template_name = "blog/index.html"
@@ -102,9 +96,7 @@ class PostListView(ListView):
 
 
 class CategoryListView(ListView):
-    """
-    Представление списка постов в категории.
-    """
+    """Представление списка постов в категории."""
 
     model = Post
     template_name = "blog/category.html"
@@ -112,9 +104,7 @@ class CategoryListView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        """
-        Получает отфильтрованный список постов в выбранной категории.
-        """
+        """Получает отфильтрованный список постов в выбранной категории."""
         queryset = super().get_queryset()
         category = get_object_or_404(
             Category, slug=self.kwargs["category_slug"], is_published=1
@@ -127,9 +117,7 @@ class CategoryListView(ListView):
         )
 
     def get_context_data(self, *, object_list=None, **kwargs):
-        """
-        Добавляет выбранную категорию в контекст.
-        """
+        """Добавляет выбранную категорию в контекст."""
         context = super().get_context_data(**kwargs)
         context["category"] = get_object_or_404(
             Category, slug=self.kwargs["category_slug"], is_published=1
@@ -138,9 +126,7 @@ class CategoryListView(ListView):
 
 
 class UserProfileView(ListView):
-    """
-    Представление профиля пользователя.
-    """
+    """Представление профиля пользователя."""
 
     model = Post
     template_name = "blog/profile.html"
@@ -151,9 +137,7 @@ class UserProfileView(ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        """
-        Получает отфильтрованный список постов пользователя.
-        """
+        """Получает отфильтрованный список постов пользователя."""
         author = get_object_or_404(User, username=self.kwargs["username"])
         queryset = super().get_queryset()
         queryset = queryset.filter(author=author)
@@ -164,9 +148,7 @@ class UserProfileView(ListView):
         return queryset
 
     def get_context_data(self, *, object_list=None, **kwargs):
-        """
-        Добавляет профиль пользователя в контекст.
-        """
+        """Добавляет профиль пользователя в контекст."""
         context = super().get_context_data(**kwargs)
         author_id = get_object_or_404(
             User, username=self.kwargs["username"]
@@ -176,9 +158,7 @@ class UserProfileView(ListView):
 
 
 class UserEditProfileView(LoginRequiredMixin, UpdateView):
-    """
-    Представление редактирования профиля пользователя.
-    """
+    """Представление редактирования профиля пользователя."""
 
     model = User
     template_name = "blog/user.html"
@@ -186,29 +166,28 @@ class UserEditProfileView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         """
-        Получает отфильтрованный запрос для редактирования профиля пользователя.
+        Получает отфильтрованный запрос для редактирования профиля
+        пользователя.
         """
         return super().get_queryset().filter(id=self.kwargs["pk"])
 
     def get_success_url(self, *args, **kwargs):
-        """
-        Возвращает URL для перенаправления после успешного редактирования профиля.
+        """Возвращает URL для перенаправления после успешного
+        редактирования профиля.
         """
         username = get_object_or_404(User, id=self.kwargs["pk"]).username
         return reverse_lazy("blog:profile", args=[username])
 
 
 class PostDetailView(DetailView):
-    """
-    Представление для детального просмотра поста.
-    """
+    """Представление для детального просмотра поста."""
 
     model = Post
     template_name = "blog/detail.html"
 
     def is_post_accessible(self, post, user):
-        """
-        Проверяет, доступен ли пост для просмотра текущему пользователю.
+        """Проверяет, доступен ли пост для просмотра текущему
+        пользователю.
         """
         return (
             post.is_published
@@ -217,8 +196,8 @@ class PostDetailView(DetailView):
         ) or user == post.author
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        Перехватывает запрос и проверяет, доступен ли пост текущему пользователю.
+        """Перехватывает запрос и проверяет, доступен ли пост
+        текущему пользователю.
         """
         try:
             post = self.get_object()
@@ -231,9 +210,7 @@ class PostDetailView(DetailView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        """
-        Добавляет форму комментариев и список комментариев в контекст.
-        """
+        """Добавляет форму комментариев и список комментариев в контекст."""
         context = super().get_context_data(**kwargs)
         context["form"] = CommentForm()
         context["comments"] = self.object.comments.select_related("post")
@@ -241,16 +218,14 @@ class PostDetailView(DetailView):
 
 
 class CommentCreateView(LoginRequiredMixin, CreateView):
-    """
-    Представление для создания комментариев.
-    """
+    """Представление для создания комментариев."""
 
     model = Comment
     form_class = CommentForm
 
     def form_valid(self, form):
-        """
-        Проверяет валидность формы и устанавливает текущего пользователя в качестве автора комментария.
+        """Проверяет валидность формы и устанавливает текущего
+        пользователя в качестве автора комментария.
         """
         post = get_object_or_404(Post, id=self.kwargs["pk"])
         form.instance.author = self.request.user
@@ -258,18 +233,14 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        """
-        Перенаправляет на страницу поста в случае невалидной формы.
-        """
+        """Перенаправляет на страницу поста в случае невалидной формы."""
         return HttpResponseRedirect(
             self.model.get_absolute_url(self.kwargs["pk"])
         )
 
 
 class CommentUpdateView(LoginRequiredMixin, UpdateView):
-    """
-    Представление для редактирования комментариев.
-    """
+    """Представление для редактирования комментариев."""
 
     model = Comment
     template_name = "blog/comment.html"
@@ -282,8 +253,8 @@ class CommentUpdateView(LoginRequiredMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        """
-        Проверяет валидность формы и устанавливает текущего пользователя в качестве автора комментария.
+        """Проверяет валидность формы и устанавливает текущего
+        пользователя в качестве автора комментария.
         """
         post = get_object_or_404(Post, id=self.kwargs["post_id"])
         form.instance.author = self.request.user
@@ -291,25 +262,21 @@ class CommentUpdateView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        """
-        Перенаправляет на страницу поста в случае невалидной формы.
-        """
+        """Перенаправляет на страницу поста в случае невалидной формы."""
         return HttpResponseRedirect(
             self.model.get_absolute_url(self.kwargs["pk"])
         )
 
 
 class CommentDeleteView(LoginRequiredMixin, DeleteView):
-    """
-    Представление для удаления комментариев.
-    """
+    """Представление для удаления комментариев."""
 
     model = Comment
     template_name = "blog/comment.html"
 
     def dispatch(self, request, *args, **kwargs):
-        """
-        Перехватывает запрос и проверяет, может ли текущий пользователь удалить комментарий.
+        """Перехватывает запрос и проверяет, может ли текущий
+        пользователь удалить комментарий.
         """
         comment_to_delete = get_object_or_404(Comment, id=self.kwargs["pk"])
         if request.user.id != comment_to_delete.author.id:
@@ -317,14 +284,12 @@ class CommentDeleteView(LoginRequiredMixin, DeleteView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        """
-        Возвращает URL для перенаправления после успешного удаления комментария.
+        """Возвращает URL для перенаправления после успешного
+        удаления комментария.
         """
         post = get_object_or_404(Post, id=self.kwargs["post_id"])
         return reverse("blog:post_detail", kwargs={"pk": post.pk})
 
     def form_invalid(self, form):
-        """
-        Перенаправляет на страницу поста в случае невалидной формы.
-        """
+        """Перенаправляет на страницу поста в случае невалидной формы."""
         return HttpResponseRedirect(self.get_success_url())
