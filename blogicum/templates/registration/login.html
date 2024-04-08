@@ -21,14 +21,14 @@
         Войти в систему
       </div>
       <div class="card-body">
-        <form method="post" action="{% url 'login' %}">
+        <form method="post" action="{% url 'auth:login' %}">
           {% csrf_token %}
           {% bootstrap_form form %}
           <input type="hidden" name="next" value="{{ next }}">
           {% bootstrap_button button_type="submit" content="Войти" %}
         </form>
         <div>
-          <a href="{% url 'password_reset' %}">Забыли пароль?</a>
+          <a href="{% url 'auth:password_reset' %}">Забыли пароль?</a>
         </div>
       </div>
     </div>

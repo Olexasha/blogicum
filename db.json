@@ -2019,7 +2019,7 @@
   }
 },
 {
-  "model": "auth.user",
+  "model": "users.user",
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$260000$wkDQh0H0DlA9aVurNkbKY8$Tvo4+TT25kNKFF1sZQ0NlJHYVMOM5UAe42VNeJxmtnY=",
@@ -2037,7 +2037,7 @@
   }
 },
 {
-  "model": "auth.user",
+  "model": "users.user",
   "pk": 2,
   "fields": {
     "password": "pbkdf2_sha256$260000$Bpi81SWpSA0HDt0G2ofnLt$UdEDuX7nim2Yhd6efVEh86wYueoZVPEI3hdsA1WD3iw=",
@@ -2055,7 +2055,7 @@
   }
 },
 {
-  "model": "auth.user",
+  "model": "users.user",
   "pk": 3,
   "fields": {
     "password": "pbkdf2_sha256$260000$30YLQ8AWERcPtAreVHb3IV$pNwoym7Ukiy8ZNv9L8dF3qMXB4yfJObqIsm/yNu6CrA=",
@@ -2073,7 +2073,7 @@
   }
 },
 {
-  "model": "auth.user",
+  "model": "users.user",
   "pk": 4,
   "fields": {
     "password": "pbkdf2_sha256$260000$bpKvE13bEr0QIlBHTGHT1w$hOiqumJnImTh1RRyS5JYpm3kfT6xjHw7NC8Ss8ePIKY=",

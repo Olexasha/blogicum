@@ -5,6 +5,6 @@ from . import views
 app_name: str = "pages"
 
 urlpatterns: list = [
-    path("about/", views.about, name="about"),
-    path("rules/", views.rules, name="rules"),
+    path("about/", views.AboutView.as_view(), name="about"),
+    path("rules/", views.RulesView.as_view(), name="rules"),
 ]

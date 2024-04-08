@@ -2,22 +2,29 @@ from pathlib import Path
 
 BASE_DIR: Path = Path(__file__).resolve().parent.parent
 
-SECRET_KEY: str = "django-insecure-kr*zdlb#&0j-sys#72hmlx9b7cg^jx0o3t_&vt&%e=)rij8@(6"
+SECRET_KEY: str = (
+    "django-insecure-kr*zdlb#&0j-sys#72hmlx9b7cg^jx0o3t_&vt&%e=)rij8@(6"
+)
 
 DEBUG: bool = True
 
-ALLOWED_HOSTS: list = []
+ALLOWED_HOSTS: list = [
+    "localhost",
+    "127.0.0.1",
+]
 
 INSTALLED_APPS: list = [
     "blog.apps.BlogConfig",
     "pages.apps.PagesConfig",
     "core.apps.CoreConfig",
+    "users.apps.UsersConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_bootstrap5",
 ]
 
 MIDDLEWARE: list = [
@@ -32,12 +39,12 @@ MIDDLEWARE: list = [
 
 ROOT_URLCONF: str = "blogicum.urls"
 
-TEMPLATE_DIRS: list = [BASE_DIR / "templates"]
+TEMPLATES_DIR: Path = BASE_DIR / "templates"
 
 TEMPLATES: list = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": TEMPLATE_DIRS,
+        "DIRS": [TEMPLATES_DIR],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -92,3 +99,10 @@ STATIC_URL: str = "/static/"
 STATICFILES_DIRS: list = [BASE_DIR / "static"]
 
 DEFAULT_AUTO_FIELD: str = "django.db.models.BigAutoField"
+
+# Работа с пользователями
+LOGIN_REDIRECT_URL = "blog:index"
+AUTH_USER_MODEL = "users.User"
+MEDIA_ROOT = BASE_DIR / "media"
+EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+EMAIL_FILE_PATH = BASE_DIR / "sent_emails"

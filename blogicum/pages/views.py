@@ -1,22 +1,26 @@
-from django.http.response import HttpResponse
 from django.shortcuts import render
+from django.views.generic import TemplateView
 
 
-def about(request) -> HttpResponse:
-    """
-    Обработчик страницы "О нас".
-    :param request: Объект запроса.
-    :return: HTTP ответ с результатом вызова.
-    """
-    template = "pages/about.html"
-    return render(request, template)
+def page_not_found(request, exception):
+    return render(request, "pages/404.html", status=404)
 
 
-def rules(request) -> HttpResponse:
-    """
-    Обработчик страницы "Правила".
-    :param request: Объект запроса.
-    :return: HTTP ответ с результатом вызова.
-    """
-    template = "pages/rules.html"
-    return render(request, template)
+def server_error(exception, request=None):
+    return render(request, "pages/500.html", status=500)
+
+
+def csrf_failure(request, reason=""):
+    return render(request, "pages/403csrf.html", status=403)
+
+
+class AboutView(TemplateView):
+    """Обработчик страницы "О нас"."""
+
+    template_name = "pages/about.html"
+
+
+class RulesView(TemplateView):
+    """Обработчик страницы "Правила"."""
+
+    template_name = "pages/rules.html"
