@@ -199,9 +199,9 @@ class PostDetailView(DetailView):
         пользователю.
         """
         return (
-                post.is_published
-                and post.category.is_published
-                and post.pub_date <= timezone.now()
+            post.is_published
+            and post.category.is_published
+            and post.pub_date <= timezone.now()
         ) or user == post.author
 
     def dispatch(self, request, *args, **kwargs):
