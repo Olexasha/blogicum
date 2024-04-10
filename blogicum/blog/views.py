@@ -14,13 +14,30 @@ from django.views.generic import (
     UpdateView,
 )
 
-from blog.models import Category, Comment, Post
+from blog.models import (
+    Category,
+    Comment,
+    Post,
+)
 from blogicum.urls import handler404
 
-from .forms import CommentForm, PostForm
+from .forms import (
+    CommentForm,
+    PostForm,
+)
 from .utils import CreateUpdateView
 
 User = get_user_model()
+
+# Имена URL
+INDEX_URL = "blog:index"
+PROFILE_URL = "blog:profile"
+POST_DETAIL_URL = "blog:post_detail"
+
+# Константы URL
+INDEX = reverse_lazy(INDEX_URL)
+PROFILE = reverse_lazy(PROFILE_URL)
+POST_DETAIL = reverse_lazy(POST_DETAIL_URL)
 
 
 class PostFieldsMixin:
@@ -30,7 +47,17 @@ class PostFieldsMixin:
 
     model = Post
     template_name = "blog/create.html"
-    success_url = reverse_lazy("blog:index")
+    success_url = INDEX
+
+    def check_if_user_is_author(self, request, *args, **kwargs):
+        """Проверяет, является ли текущий пользователь автором
+        поста.
+        """
+        post_to_delete = get_object_or_404(Post, id=kwargs["pk"])
+        if request.user.id != post_to_delete.author.id:
+            return redirect(POST_DETAIL_URL, pk=post_to_delete.pk)
+        else:
+            return super().dispatch(request, *args, **kwargs)
 
 
 class PostCreateEditView(
@@ -51,7 +78,7 @@ class PostCreateEditView(
         """Возвращает URL для перенаправления после успешного
         создания/редактирования поста.
         """
-        return reverse("blog:profile", args=[self.request.user.username])
+        return reverse(PROFILE_URL, args=[self.request.user.username])
 
     def dispatch(self, request, *args, **kwargs):
         """Перехватывает запрос и проверяет, может ли текущий
@@ -67,41 +94,38 @@ class PostCreateEditView(
 class PostDeleteView(LoginRequiredMixin, PostFieldsMixin, DeleteView):
     """Представление для удаления поста."""
 
-    pass
-
     def dispatch(self, request, *args, **kwargs):
         """
         Перехватывает запрос и проверяет, может ли текущий пользователь
         удалить пост.
         """
-        post_to_delete = get_object_or_404(Post, id=kwargs["pk"])
-        if request.user.id != post_to_delete.author.id:
-            return redirect("blog:post_detail", pk=post_to_delete.pk)
-        return super().dispatch(request, *args, **kwargs)
+        return self.check_if_user_is_author(request, *args, **kwargs)
 
 
-class PostListView(ListView):
+class ListingMixin:
+    """Миксин, определяющий общие поля для представлений списка постов."""
+
+    model = Post
+    ordering = "-pub_date"
+    paginate_by = 10
+
+
+class PostListView(ListingMixin, ListView):
     """Представление списка постов."""
 
-    model = Post
     template_name = "blog/index.html"
     queryset = (
-        Post.objects.exclude(pub_date__gt=timezone.now())
+        Post.objects.select_related("location", "author", "category")
+        .exclude(pub_date__gt=timezone.now())
         .filter(is_published=1, category__is_published=1)
-        .select_related("location", "author", "category")
         .annotate(comment_count=Count("comments"))
     )
-    ordering = "-pub_date"
-    paginate_by = 10
 
 
-class CategoryListView(ListView):
+class CategoryListView(ListingMixin, ListView):
     """Представление списка постов в категории."""
 
-    model = Post
     template_name = "blog/category.html"
-    ordering = "-pub_date"
-    paginate_by = 10
 
     def get_queryset(self):
         """Получает отфильтрованный список постов в выбранной категории."""
@@ -110,9 +134,9 @@ class CategoryListView(ListView):
             Category, slug=self.kwargs["category_slug"], is_published=1
         )
         return (
-            queryset.exclude(pub_date__gt=timezone.now())
+            queryset.select_related("category")
+            .exclude(pub_date__gt=timezone.now())
             .filter(category=category, is_published=1)
-            .select_related("category")
             .annotate(comment_count=Count("comments"))
         )
 
@@ -125,16 +149,13 @@ class CategoryListView(ListView):
         return context
 
 
-class UserProfileView(ListView):
+class UserProfileView(ListingMixin, ListView):
     """Представление профиля пользователя."""
 
-    model = Post
     template_name = "blog/profile.html"
     queryset = Post.objects.select_related("author").annotate(
         comment_count=Count("comments")
     )
-    ordering = "-pub_date"
-    paginate_by = 10
 
     def get_queryset(self):
         """Получает отфильтрованный список постов пользователя."""
@@ -176,7 +197,7 @@ class UserEditProfileView(LoginRequiredMixin, UpdateView):
         редактирования профиля.
         """
         username = get_object_or_404(User, id=self.kwargs["pk"]).username
-        return reverse_lazy("blog:profile", args=[username])
+        return reverse_lazy(PROFILE_URL, args=[username])
 
 
 class PostDetailView(DetailView):
@@ -190,9 +211,9 @@ class PostDetailView(DetailView):
         пользователю.
         """
         return (
-            post.is_published
-            and post.category.is_published
-            and post.pub_date <= timezone.now()
+                post.is_published
+                and post.category.is_published
+                and post.pub_date <= timezone.now()
         ) or user == post.author
 
     def dispatch(self, request, *args, **kwargs):
@@ -288,7 +309,7 @@ class CommentDeleteView(LoginRequiredMixin, DeleteView):
         удаления комментария.
         """
         post = get_object_or_404(Post, id=self.kwargs["post_id"])
-        return reverse("blog:post_detail", kwargs={"pk": post.pk})
+        return reverse(POST_DETAIL_URL, kwargs={"pk": post.pk})
 
     def form_invalid(self, form):
         """Перенаправляет на страницу поста в случае невалидной формы."""

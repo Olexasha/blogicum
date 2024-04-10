@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Category, Location, Post
+from .models import Category, Comment, Location, Post
 
 admin.site.empty_value_display = "Не задано"
 
@@ -15,9 +15,6 @@ class CategoryAdmin(admin.ModelAdmin):
     list_filter = ("title",)
     search_fields = ("title",)
     prepopulated_fields = {"slug": ("title",)}
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).filter(is_published=1)
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -37,6 +34,26 @@ class PostAdmin(admin.ModelAdmin):
         return actions
 
 
+class CommentInline(admin.TabularInline):
+    model = Post
+    extra = 1
+
+
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ("text", "created_at", "author")
+    list_filter = ("created_at", "author")
+    search_fields = ("text", "author__username")
+    date_hierarchy = "created_at"
+    empty_value_display = "-пусто-"
+
+
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ("name",)
+    list_filter = ("name",)
+    search_fields = ("name",)
+
+
 admin.site.register(Post, PostAdmin)
-admin.site.register(Category)
-admin.site.register(Location)
+admin.site.register(Category, CategoryAdmin)
+admin.site.register(Comment, CommentAdmin)
+admin.site.register(Location, LocationAdmin)
