@@ -6,25 +6,13 @@ from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.views.generic import (
-    CreateView,
-    DeleteView,
-    DetailView,
-    ListView,
-    UpdateView,
-)
+from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
+                                  UpdateView)
 
-from blog.models import (
-    Category,
-    Comment,
-    Post,
-)
+from blog.models import Category, Comment, Post
 from blogicum.urls import handler404
 
-from .forms import (
-    CommentForm,
-    PostForm,
-)
+from .forms import CommentForm, PostForm
 from .utils import CreateUpdateView
 
 User = get_user_model()
