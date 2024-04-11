@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count
@@ -6,11 +7,15 @@ from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
-                                  UpdateView)
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
 
 from blog.models import Category, Comment, Post
-from blogicum.urls import handler404
 
 from .forms import CommentForm, PostForm
 from .utils import CreateUpdateView
@@ -105,7 +110,7 @@ class PostListView(ListingMixin, ListView):
     queryset = (
         Post.objects.select_related("location", "author", "category")
         .exclude(pub_date__gt=timezone.now())
-        .filter(is_published=1, category__is_published=1)
+        .filter(is_published=True, category__is_published=True)
         .annotate(comment_count=Count("comments"))
     )
 
@@ -119,12 +124,12 @@ class CategoryListView(ListingMixin, ListView):
         """Получает отфильтрованный список постов в выбранной категории."""
         queryset = super().get_queryset()
         category = get_object_or_404(
-            Category, slug=self.kwargs["category_slug"], is_published=1
+            Category, slug=self.kwargs["category_slug"], is_published=True
         )
         return (
             queryset.select_related("category")
             .exclude(pub_date__gt=timezone.now())
-            .filter(category=category, is_published=1)
+            .filter(category=category, is_published=True)
             .annotate(comment_count=Count("comments"))
         )
 
@@ -132,7 +137,7 @@ class CategoryListView(ListingMixin, ListView):
         """Добавляет выбранную категорию в контекст."""
         context = super().get_context_data(**kwargs)
         context["category"] = get_object_or_404(
-            Category, slug=self.kwargs["category_slug"], is_published=1
+            Category, slug=self.kwargs["category_slug"], is_published=True
         )
         return context
 
@@ -148,11 +153,10 @@ class UserProfileView(ListingMixin, ListView):
     def get_queryset(self):
         """Получает отфильтрованный список постов пользователя."""
         author = get_object_or_404(User, username=self.kwargs["username"])
-        queryset = super().get_queryset()
-        queryset = queryset.filter(author=author)
+        queryset = super().get_queryset().filter(author=author)
         if author.id != self.request.user.id:
             queryset = queryset.filter(
-                is_published=1, category__is_published=1
+                is_published=True, category__is_published=True
             ).exclude(pub_date__gt=timezone.now())
         return queryset
 
@@ -194,28 +198,22 @@ class PostDetailView(DetailView):
     model = Post
     template_name = "blog/detail.html"
 
-    def is_post_accessible(self, post, user):
-        """Проверяет, доступен ли пост для просмотра текущему
-        пользователю.
-        """
-        return (
-            post.is_published
-            and post.category.is_published
-            and post.pub_date <= timezone.now()
-        ) or user == post.author
+    def get_queryset(self):
+        """Получает отфильтрованный список постов."""
+        queryset = super().get_queryset()
+        author = get_object_or_404(Post, id=self.kwargs["pk"]).author
+        if self.request.user.id != author.id:
+            queryset = queryset.filter(
+                is_published=True, category__is_published=True
+            ).exclude(pub_date__gt=timezone.now())
+        return queryset
 
     def dispatch(self, request, *args, **kwargs):
         """Перехватывает запрос и проверяет, доступен ли пост
         текущему пользователю.
         """
-        try:
-            post = self.get_object()
-            if not self.is_post_accessible(post, request.user):
-                raise Http404(
-                    "Такого поста не существует или у вас нет доступа к нему."
-                )
-        except Http404 as error:
-            return handler404(request, exception=str(error))
+        if not self.get_object():
+            raise Http404("Такого поста не существует.")
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -226,71 +224,47 @@ class PostDetailView(DetailView):
         return context
 
 
-class CommentCreateView(LoginRequiredMixin, CreateView):
+class CommentMixin:
+    model = Comment
+    template_name = "blog/comment.html"
+    form_class = CommentForm
+
+    def form_valid(self, form):
+        """Проверяет валидность формы и устанавливает текущего
+        пользователя в качестве автора комментария.
+        """
+        if "delete/" not in self.request.path:
+            post = get_object_or_404(
+                Post, id=self.kwargs.get("post_id") or self.kwargs["pk"]
+            )
+            form.instance.author = self.request.user
+            form.instance.post = post
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        """Перенаправляет на страницу поста в случае невалидной формы."""
+        return HttpResponseRedirect(self.get_success_url())
+
+    def dispatch(self, request, *args, **kwargs):
+        if "/comment/" not in self.request.path:
+            comment_to_change = get_object_or_404(
+                Comment, id=self.kwargs["pk"]
+            )
+            if request.user.id != comment_to_change.author.id:
+                raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+
+class CommentCreateView(LoginRequiredMixin, CommentMixin, CreateView):
     """Представление для создания комментариев."""
 
-    model = Comment
-    form_class = CommentForm
 
-    def form_valid(self, form):
-        """Проверяет валидность формы и устанавливает текущего
-        пользователя в качестве автора комментария.
-        """
-        post = get_object_or_404(Post, id=self.kwargs["pk"])
-        form.instance.author = self.request.user
-        form.instance.post = post
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        """Перенаправляет на страницу поста в случае невалидной формы."""
-        return HttpResponseRedirect(
-            self.model.get_absolute_url(self.kwargs["pk"])
-        )
-
-
-class CommentUpdateView(LoginRequiredMixin, UpdateView):
+class CommentUpdateView(LoginRequiredMixin, CommentMixin, UpdateView):
     """Представление для редактирования комментариев."""
 
-    model = Comment
-    template_name = "blog/comment.html"
-    form_class = CommentForm
 
-    def dispatch(self, request, *args, **kwargs):
-        comment_to_delete = get_object_or_404(Comment, id=self.kwargs["pk"])
-        if request.user.id != comment_to_delete.author.id:
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
-
-    def form_valid(self, form):
-        """Проверяет валидность формы и устанавливает текущего
-        пользователя в качестве автора комментария.
-        """
-        post = get_object_or_404(Post, id=self.kwargs["post_id"])
-        form.instance.author = self.request.user
-        form.instance.post = post
-        return super().form_valid(form)
-
-    def form_invalid(self, form):
-        """Перенаправляет на страницу поста в случае невалидной формы."""
-        return HttpResponseRedirect(
-            self.model.get_absolute_url(self.kwargs["pk"])
-        )
-
-
-class CommentDeleteView(LoginRequiredMixin, DeleteView):
+class CommentDeleteView(LoginRequiredMixin, CommentMixin, DeleteView):
     """Представление для удаления комментариев."""
-
-    model = Comment
-    template_name = "blog/comment.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        """Перехватывает запрос и проверяет, может ли текущий
-        пользователь удалить комментарий.
-        """
-        comment_to_delete = get_object_or_404(Comment, id=self.kwargs["pk"])
-        if request.user.id != comment_to_delete.author.id:
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         """Возвращает URL для перенаправления после успешного
@@ -298,7 +272,3 @@ class CommentDeleteView(LoginRequiredMixin, DeleteView):
         """
         post = get_object_or_404(Post, id=self.kwargs["post_id"])
         return reverse(POST_DETAIL_URL, kwargs={"pk": post.pk})
-
-    def form_invalid(self, form):
-        """Перенаправляет на страницу поста в случае невалидной формы."""
-        return HttpResponseRedirect(self.get_success_url())

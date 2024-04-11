@@ -25,7 +25,7 @@ class PostAdmin(admin.ModelAdmin):
     empty_value_display = "-пусто-"
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(is_published=1)
+        return super().get_queryset(request).filter(is_published=True)
 
     def get_actions(self, request):
         actions = super().get_actions(request)
