@@ -10,9 +10,9 @@ class CreateUpdateView(
 ):
     """
     Как у BaseUpdateView, так и у BaseCreateView общие практически родители,
-    то просто наследуем их все. Дальше единственным отличием в их реализации -
+    то просто наследуем их. Дальше единственным отличием в их реализации -
     это значение атрибута self.object. Чтобы сделать CBV для создания и
-    удаления,  мы должны переопределить метод get_object в случае если Update
+    удаления, мы должны переопределить метод get_object в случае если Update
     операция (тк мы работаем с существующим объектом модели), либо None
     если Create.
     """
@@ -30,9 +30,23 @@ class CreateUpdateView(
         return None
 
     def get(self, request, *args, **kwargs):
+        """
+        Переопределяем метод get.
+        :param request: Объект запроса
+        :param args: Аргументы.
+        :param kwargs: Именованные аргументы.
+        :return:
+        """
         self.object = self.get_object()
         return super(CreateUpdateView, self).get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        """
+        Переопределяем метод post.
+        :param request: Объект запроса
+        :param args: Аргументы.
+        :param kwargs: Именованные аргументы.
+        :return:
+        """
         self.object = self.get_object()
         return super(CreateUpdateView, self).post(request, *args, **kwargs)

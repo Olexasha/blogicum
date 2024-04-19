@@ -78,9 +78,9 @@ class PostCreateEditView(
         пользователь редактировать пост.
         """
         if "edit/" in self.request.path:
-            post_to_delete = get_object_or_404(Post, id=kwargs["pk"])
-            if request.user.id != post_to_delete.author.id:
-                return redirect("blog:post_detail", pk=post_to_delete.pk)
+            post_to_edit = get_object_or_404(Post, id=kwargs["pk"])
+            if request.user.id != post_to_edit.author.id:
+                return redirect("blog:post_detail", pk=post_to_edit.pk)
         return super().dispatch(request, *args, **kwargs)
 
 

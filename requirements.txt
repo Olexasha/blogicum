@@ -27,3 +27,4 @@ soupsieve==2.5
 sqlparse==0.4.3
 tomli==2.0.1
 yapf==0.32.0
+pre-commit==3.7.0
